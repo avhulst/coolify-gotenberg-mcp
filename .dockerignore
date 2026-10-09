@@ -1,0 +1,8 @@
+.git
+.env
+data/
+clients/
+*.md
+.venv/
+__pycache__/
+docker-compose*.yml

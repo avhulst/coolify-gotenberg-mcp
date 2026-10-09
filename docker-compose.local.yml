@@ -1,0 +1,68 @@
+# Local operation without Coolify:
+#   cp .env.example .env   # set MCP_AUTH_TOKEN
+#   docker compose -f docker-compose.local.yml up -d --build
+# MCP endpoint: http://127.0.0.1:8000/mcp
+# Network "gotenberg-net" is fixed so a stdio container (docker run --network gotenberg-net ...) can reach Gotenberg.
+
+name: gotenberg-mcp-local
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gotenberg-mcp:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - MCP_TRANSPORT=streamable-http
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8000}
+      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
+      - FILE_SIGNING_KEY=${FILE_SIGNING_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost:*,127.0.0.1:*}
+      - GOTENBERG_URL=${GOTENBERG_URL:-http://gotenberg:3000}
+      - GOTENBERG_USERNAME=${GOTENBERG_USERNAME:-}
+      - GOTENBERG_PASSWORD=${GOTENBERG_PASSWORD:-}
+      - FILE_TTL_HOURS=${FILE_TTL_HOURS:-24}
+      - MAX_INPUT_MB=${MAX_INPUT_MB:-50}
+      - ALLOW_PRIVATE_URLS=${ALLOW_PRIVATE_URLS:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # OAuth 2.1 for Claude/Mistral custom connectors (login password for the consent page)
+      - OAUTH_PASSWORD=${OAUTH_PASSWORD:-}
+      - OAUTH_ENABLED=${OAUTH_ENABLED:-true}
+      - OAUTH_ACCESS_TOKEN_TTL_MINUTES=${OAUTH_ACCESS_TOKEN_TTL_MINUTES:-60}
+      - OAUTH_REFRESH_TOKEN_TTL_DAYS=${OAUTH_REFRESH_TOKEN_TTL_DAYS:-30}
+      - OAUTH_REFRESH_REUSE_GRACE_SECONDS=${OAUTH_REFRESH_REUSE_GRACE_SECONDS:-10}
+      - OAUTH_REDIRECT_HOSTS=${OAUTH_REDIRECT_HOSTS:-}
+      - HOST_DATA_DIR=${HOST_DATA_DIR:-}
+    volumes:
+      - ./data:/data
+    depends_on:
+      gotenberg:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    command:
+      - gotenberg
+      - --api-timeout=120s
+      - --chromium-deny-list=^file:(?!//\/tmp/).*|^https?://(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.|0\.|\[|host\.docker\.internal|mcp[:/]|gotenberg[:/]).*
+      - --libreoffice-deny-list=^file:.*|^https?://(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|0\.|\[|mcp[:/]|gotenberg[:/]).*
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+networks:
+  default:
+    name: gotenberg-net

@@ -1,0 +1,37 @@
+{
+  "_comment": "Merge into claude_desktop_config.json - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json, Windows: %APPDATA%\\Claude\\claude_desktop_config.json. Keep only the variant(s) you need. (a) 'gotenberg' = remote via HTTPS (Coolify), (b) 'gotenberg_local' = local stdio via Docker (requires: docker compose -f docker-compose.local.yml up -d --build).",
+  "mcpServers": {
+    "gotenberg": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://<domain>/mcp",
+        "--header",
+        "Authorization: Bearer ${MCP_TOKEN}"
+      ],
+      "env": {
+        "MCP_TOKEN": "<SERVICE_PASSWORD_64_MCPTOKEN aus Coolify>"
+      }
+    },
+    "gotenberg_local": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "gotenberg-net",
+        "-e",
+        "MCP_TRANSPORT=stdio",
+        "-e",
+        "GOTENBERG_URL=http://gotenberg:3000",
+        "-e",
+        "HOST_DATA_DIR=/ABSOLUTER/PFAD/zum/repo/data",
+        "-v",
+        "/ABSOLUTER/PFAD/zum/repo/data:/data",
+        "gotenberg-mcp:latest"
+      ]
+    }
+  }
+}

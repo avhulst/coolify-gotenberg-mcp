@@ -1,0 +1,70 @@
+# documentation: https://gotenberg.dev/docs/getting-started/introduction
+# slogan: MCP server for Gotenberg - convert URLs, HTML, Markdown and office documents to PDF, merge PDFs.
+# tags: mcp, pdf, gotenberg, document, conversion, chromium, libreoffice, ai
+# logo: svgs/gotenberg.png
+# port: 8000
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Coolify generates the domain and routes it to port 8000 of this service
+      - SERVICE_URL_MCP_8000
+      - MCP_TRANSPORT=streamable-http
+      - PUBLIC_BASE_URL=${SERVICE_URL_MCP}
+      - MCP_AUTH_TOKEN=${SERVICE_PASSWORD_64_MCPTOKEN}
+      - FILE_SIGNING_KEY=${FILE_SIGNING_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
+      - GOTENBERG_URL=${GOTENBERG_URL:-http://gotenberg:3000}
+      - GOTENBERG_USERNAME=${GOTENBERG_USERNAME:-}
+      - GOTENBERG_PASSWORD=${GOTENBERG_PASSWORD:-}
+      - GOTENBERG_TIMEOUT=${GOTENBERG_TIMEOUT:-120}
+      - FILE_TTL_HOURS=${FILE_TTL_HOURS:-24}
+      - MAX_INPUT_MB=${MAX_INPUT_MB:-50}
+      - ALLOW_PRIVATE_URLS=${ALLOW_PRIVATE_URLS:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # OAuth 2.1 for Claude/Mistral custom connectors (login password for the consent page)
+      - OAUTH_PASSWORD=${SERVICE_PASSWORD_OAUTH}
+      - OAUTH_ENABLED=${OAUTH_ENABLED:-true}
+      - OAUTH_ACCESS_TOKEN_TTL_MINUTES=${OAUTH_ACCESS_TOKEN_TTL_MINUTES:-60}
+      - OAUTH_REFRESH_TOKEN_TTL_DAYS=${OAUTH_REFRESH_TOKEN_TTL_DAYS:-30}
+      - OAUTH_REFRESH_REUSE_GRACE_SECONDS=${OAUTH_REFRESH_REUSE_GRACE_SECONDS:-10}
+      - OAUTH_REDIRECT_HOSTS=${OAUTH_REDIRECT_HOSTS:-}
+    volumes:
+      - mcp-data:/data
+    depends_on:
+      gotenberg:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    # internal only - no SERVICE_URL, not exposed by Coolify/Traefik
+    command:
+      - gotenberg
+      - --api-timeout=${GOTENBERG_API_TIMEOUT:-120s}
+      # SSRF protection: Chromium must not reach local/private targets
+      - --chromium-deny-list=^file:(?!//\/tmp/).*|^https?://(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.|0\.|\[|host\.docker\.internal|mcp[:/]|gotenberg[:/]).*
+      - --libreoffice-deny-list=^file:.*|^https?://(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|0\.|\[|mcp[:/]|gotenberg[:/]).*
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mcp-data:

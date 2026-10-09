@@ -1,0 +1,26 @@
+# Mistral Vibe: copy the block(s) you need into ./.vibe/config.toml (project)
+# or ~/.vibe/config.toml (global). Vibe exposes tools as {server_name}_{tool_name},
+# e.g. gotenberg_url_to_pdf.
+
+# (a) Remote via HTTPS (Coolify deployment)
+[[mcp_servers]]
+name = "gotenberg"
+transport = "streamable-http"
+url = "https://<domain>/mcp"
+headers = { "Authorization" = "Bearer <token>" }
+
+# (b) Local via stdio (requires: docker compose -f docker-compose.local.yml up -d --build)
+[[mcp_servers]]
+name = "gotenberg_local"
+transport = "stdio"
+command = "docker"
+args = [
+  "run", "-i", "--rm",
+  "--network", "gotenberg-net",
+  "-e", "MCP_TRANSPORT=stdio",
+  "-e", "GOTENBERG_URL=http://gotenberg:3000",
+  "-e", "HOST_DATA_DIR=/ABSOLUTER/PFAD/zum/repo/data",
+  "-v", "/ABSOLUTER/PFAD/zum/repo/data:/data",
+  "gotenberg-mcp:latest",
+]
+startup_timeout_sec = 30
