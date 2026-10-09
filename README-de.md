@@ -57,7 +57,7 @@ Für Kompatibilität mit Claude Desktop und Vibe sind die Schemas flach (kein `a
 8. Test: `curl https://gotenberg-mcp.example.com/healthz` → `{"status":"ok"}`;
    `curl -i -X POST https://gotenberg-mcp.example.com/mcp` → `401`.
 
-Weitere Werte (`FILE_TTL_HOURS`, `LOG_LEVEL`, `ALLOWED_HOSTS`, `GOTENBERG_URL` …) sind als `${VAR:-default}` referenziert und können in der Coolify-UI geändert werden (danach *Redeploy*).
+Weitere Werte (`FILE_TTL_HOURS`, `MCP_LOG_LEVEL`, `ALLOWED_HOSTS`, `GOTENBERG_URL` …) sind als `${VAR:-default}` referenziert und können in der Coolify-UI geändert werden (danach *Redeploy*).
 
 > **Streaming hängt?** Falls Antworten über HTTPS hängen bleiben oder erst nach Timeout ankommen, in Coolify für die Ressource die **Gzip-Kompression deaktivieren** (Resource → Advanced → „Enable Gzip Compression“ aus). Kompression puffert SSE-Streams.
 
@@ -195,7 +195,8 @@ Prüfen in Vibe: `/mcp gotenberg_local` (bzw. `/mcp gotenberg`) listet die sechs
 | `OAUTH_REFRESH_TOKEN_TTL_DAYS` | `30` | Gültigkeit der Refresh-Tokens (Rotation bei jeder Nutzung) |
 | `OAUTH_REFRESH_REUSE_GRACE_SECONDS` | `10` | Kulanzzeit für parallele Refreshes desselben Clients; danach gilt eine Wiederverwendung als Diebstahl und widerruft die Token-Kette |
 | `OAUTH_REDIRECT_HOSTS` | leer (alle) | Kommagetrennte Allowlist für Redirect-Hosts bei der Client-Registrierung |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `MCP_LOG_LEVEL` | `INFO` | Log-Level des MCP-Servers: `DEBUG`, `INFO`, `WARNING`, `ERROR` (`LOG_LEVEL` wird als Fallback weiter gelesen) |
+| `GOTENBERG_LOG_LEVEL` | `info` | Log-Level der mitgelieferten Gotenberg-Instanz (nur Kleinbuchstaben: `error`, `warn`, `info`, `debug`). Gotenberg liest selbst `LOG_LEVEL`, deshalb setzt die Compose-Datei den Wert explizit; sonst bricht Gotenberg beim Start ab, wenn die Plattform einen großgeschriebenen Wert durchreicht |
 | `HOST_DATA_DIR` | leer | Host-Pfad von `/data`; fügt `local_path` zu Ergebnissen hinzu |
 | `DATA_DIR` | `/data` | Datenverzeichnis im Container (`input/`, `output/`) |
 

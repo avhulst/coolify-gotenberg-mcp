@@ -57,7 +57,7 @@ For compatibility with Claude Desktop and Vibe the schemas are flat (no `anyOf`/
 8. Test: `curl https://gotenberg-mcp.example.com/healthz` → `{"status":"ok"}`;
    `curl -i -X POST https://gotenberg-mcp.example.com/mcp` → `401`.
 
-Further values (`FILE_TTL_HOURS`, `LOG_LEVEL`, `ALLOWED_HOSTS`, `GOTENBERG_URL` …) are referenced as `${VAR:-default}` and can be changed in the Coolify UI (then *Redeploy*).
+Further values (`FILE_TTL_HOURS`, `MCP_LOG_LEVEL`, `ALLOWED_HOSTS`, `GOTENBERG_URL` …) are referenced as `${VAR:-default}` and can be changed in the Coolify UI (then *Redeploy*).
 
 > **Streaming hangs?** If responses over HTTPS stall or only arrive after a timeout, **disable gzip compression** for the resource in Coolify (Resource → Advanced → turn off "Enable Gzip Compression"). Compression buffers SSE streams.
 
@@ -194,7 +194,8 @@ Check in Vibe: `/mcp gotenberg_local` (or `/mcp gotenberg`) lists the six tools.
 | `OAUTH_REFRESH_TOKEN_TTL_DAYS` | `30` | Validity of refresh tokens (rotated on every use) |
 | `OAUTH_REFRESH_REUSE_GRACE_SECONDS` | `10` | Grace period for parallel refreshes by the same client; after it, reuse counts as theft and revokes the token chain |
 | `OAUTH_REDIRECT_HOSTS` | empty (all) | Comma-separated allowlist of redirect hosts for client registration |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `MCP_LOG_LEVEL` | `INFO` | Log level of the MCP server: `DEBUG`, `INFO`, `WARNING`, `ERROR` (`LOG_LEVEL` is still read as a fallback) |
+| `GOTENBERG_LOG_LEVEL` | `info` | Log level of the bundled Gotenberg (lowercase only: `error`, `warn`, `info`, `debug`). Gotenberg reads `LOG_LEVEL` itself, so the compose file sets it explicitly; otherwise an uppercase value passed on by the platform makes Gotenberg crash on startup |
 | `HOST_DATA_DIR` | empty | Host path of `/data`; adds `local_path` to results |
 | `DATA_DIR` | `/data` | Data directory in the container (`input/`, `output/`) |
 

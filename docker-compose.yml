@@ -24,7 +24,7 @@ services:
       - FILE_TTL_HOURS=${FILE_TTL_HOURS:-24}
       - MAX_INPUT_MB=${MAX_INPUT_MB:-50}
       - ALLOW_PRIVATE_URLS=${ALLOW_PRIVATE_URLS:-false}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MCP_LOG_LEVEL=${MCP_LOG_LEVEL:-INFO}
       # OAuth 2.1 for Claude/Mistral custom connectors (login password for the consent page)
       - OAUTH_PASSWORD=${SERVICE_PASSWORD_OAUTH}
       - OAUTH_ENABLED=${OAUTH_ENABLED:-true}
@@ -51,6 +51,10 @@ services:
 
   gotenberg:
     image: gotenberg/gotenberg:8
+    environment:
+      # Gotenberg reads LOG_LEVEL itself and only accepts lowercase error|warn|info|debug.
+      # Set explicitly so a LOG_LEVEL injected by the platform cannot crash it.
+      - LOG_LEVEL=${GOTENBERG_LOG_LEVEL:-info}
     # internal only - no SERVICE_URL, not exposed by Coolify/Traefik
     command:
       - gotenberg

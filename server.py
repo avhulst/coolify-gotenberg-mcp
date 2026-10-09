@@ -52,7 +52,9 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.lower() in ("1", "true", "yes", "on")
 
 
-LOG_LEVEL = _env("LOG_LEVEL", "INFO").upper()
+# MCP_LOG_LEVEL, not LOG_LEVEL: Gotenberg also reads LOG_LEVEL (lowercase only) and refuses
+# to start if a platform like Coolify passes our value on to it. LOG_LEVEL stays as fallback.
+LOG_LEVEL = (_env("MCP_LOG_LEVEL") or _env("LOG_LEVEL", "INFO")).upper()
 logging.basicConfig(
     level=LOG_LEVEL,
     stream=sys.stderr,
